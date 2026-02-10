@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -14,12 +19,18 @@ import Explore from "./pages/Explore";
 import FollowersList from "./pages/FollowersList";
 import FollowingList from "./pages/FollowingList";
 import Notifications from "./pages/Notifications";
+import Settings from "./pages/settings";
+
+import Chat from "./pages/chat/Chat";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/TopBar";
 import BottomNav from "./components/BottomNav";
-import Chat from "./pages/Chat";
 
+// ✅ ONLINE CONTEXT
+import { OnlineProvider } from "./context/OnlineContext";
+
+/* ===== LAYOUT ===== */
 function Layout({ children }) {
   const location = useLocation();
 
@@ -39,104 +50,115 @@ function Layout({ children }) {
   );
 }
 
+/* ===== APP ===== */
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
+    // ✅ WRAP ENTIRE APP
+    <OnlineProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/add-post"
+              element={
+                <ProtectedRoute>
+                  <AddPost />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/add-post"
-            element={
-              <ProtectedRoute>
-                <AddPost />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/post/:id"
+              element={
+                <ProtectedRoute>
+                  <SinglePost />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/post/:id"
-            element={
-              <ProtectedRoute>
-                <SinglePost />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <EditPost />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditPost />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/user/:id"
-            element={
-              <ProtectedRoute>
-                <PublicProfile />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/user/:id"
+              element={
+                <ProtectedRoute>
+                  <PublicProfile />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/explore"
-            element={
-              <ProtectedRoute>
-                <Explore />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/explore"
+              element={
+                <ProtectedRoute>
+                  <Explore />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/followers/:id" element={<FollowersList />} />
-          <Route path="/following/:id" element={<FollowingList />} />
+            <Route path="/followers/:id" element={<FollowersList />} />
+            <Route path="/following/:id" element={<FollowingList />} />
 
-          {/* 🔥 Chat page route */}
-          <Route
-            path="/chat/:id"
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            }
-          />
+            {/* ✅ CHAT */}
+            <Route
+              path="/chat/:id"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Notifications page route */}
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Layout>
-    </Router>
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Layout>
+      </Router>
+    </OnlineProvider>
   );
 }
 
