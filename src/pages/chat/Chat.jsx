@@ -90,7 +90,7 @@ export default function Chat() {
       bottomRef.current?.scrollIntoView({ behavior: "auto" });
     }
     initialScrollDone.current = true;
-  }, [messages.length]);
+  }, [messages]);
 
   /* ================= SMART AUTO SCROLL ================= */
   useEffect(() => {
