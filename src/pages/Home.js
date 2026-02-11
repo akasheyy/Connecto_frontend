@@ -41,18 +41,32 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
-    };
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("mousedown", handleClickOutside);
-    loadData();
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  const token = localStorage.getItem("token");
+
+  // ✅ Redirect if not logged in
+  if (!token) {
+  navigate("/login", { replace: true });
+  return;
+}
+  const handleResize = () => setIsMobile(window.innerWidth <= 768);
+
+  const handleClickOutside = (e) => {
+    if (menuRef.current && !menuRef.current.contains(e.target)) {
+      setActiveMenu(null);
+    }
+  };
+
+  window.addEventListener("resize", handleResize);
+  window.addEventListener("mousedown", handleClickOutside);
+
+  loadData();
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+    window.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
+
 
   async function loadData() {
     const token = localStorage.getItem("token");
