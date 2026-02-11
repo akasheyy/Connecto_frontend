@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
-export default function Login() {
+export default function Login({ deferredPrompt, handleInstall }) {
+
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const [formData, setFormData] = useState({
@@ -185,6 +186,30 @@ export default function Login() {
             Register
           </a>
         </p>
+
+         {deferredPrompt && (
+      <button
+  onClick={handleInstall}
+  style={{
+    marginTop: "15px",
+    width: "100%",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#000",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: "15px",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    transition: "0.2s ease",
+  }}
+>
+  Install App
+</button>
+
+    )}
+
       </div>
 
       {/* Animations */}

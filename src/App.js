@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -52,14 +52,60 @@ function Layout({ children }) {
 
 /* ===== APP ===== */
 function App() {
+
+  // ✅ State added
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // ✅ Hook moved inside component
+useEffect(() => {
+  const handler = (e) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+  };
+
+  window.addEventListener("beforeinstallprompt", handler);
+
+  // 👇 Detect installed mode
+  if (window.matchMedia("(display-mode: standalone)").matches) {
+    setDeferredPrompt(null);
+  }
+
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handler);
+  };
+}, []);
+
+
+  const handleInstall = () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === "accepted") {
+        console.log("App Installed ✅");
+      }
+
+      setDeferredPrompt(null);
+    });
+  };
+
   return (
-    // ✅ WRAP ENTIRE APP
     <OnlineProvider>
       <Router>
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route
+  path="/login"
+  element={
+    <Login
+      deferredPrompt={deferredPrompt}
+      handleInstall={handleInstall}
+    />
+  }
+/>
+
             <Route path="/register" element={<Register />} />
 
             <Route
