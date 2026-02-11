@@ -542,3 +542,30 @@
   color: white;
 }
 
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Standard fallback */
+  height: 100dvh; /* Dynamic viewport for mobile chrome/safari */
+  overflow: hidden;
+}
+
+.chat-messages-viewport {
+  flex: 1; /* This takes up all available space between header and footer */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: #d1bcbc; /* Or your preferred bg */
+}
+
+.messages-inner-wrapper {
+  margin-top: auto; /* Pushes messages to bottom if there are few */
+  padding: 1rem;
+}
+
+.chat-loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}

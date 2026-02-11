@@ -11,49 +11,55 @@ export default function useChatSocket({
   onStopTyping,
   onDelete,
   onClear,
-  onDelivered, // 👈 NEW
-  onSeen,      // 👈 FIXED
+  onDelivered,
+  onSeen,
 }) {
   const socketRef = useRef(null);
 
   useEffect(() => {
     if (!token || !API_BASE) return;
 
+    /* ✅ Prevent duplicate sockets */
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
     socketRef.current = io(API_BASE, {
       auth: { token },
     });
 
+    const socket = socketRef.current;
+
     /* ---------------- LISTENERS ---------------- */
 
-    socketRef.current.on("new_message", onMessage);
+    socket.on("new_message", onMessage);
+    socket.on("typing", onTyping);
+    socket.on("stop_typing", onStopTyping);
 
-    socketRef.current.on("typing", onTyping);
-    socketRef.current.on("stop_typing", onStopTyping);
+    socket.on("message_deleted", ({ messageId }) => {
+      onDelete?.(messageId);
+    });
 
-    socketRef.current.on("message_deleted", ({ messageId }) =>
-      onDelete(messageId)
-    );
+    socket.on("chat_cleared", () => {
+      onClear?.();
+    });
 
-    socketRef.current.on("chat_cleared", onClear);
-
-    // ✅ DELIVERED
-    socketRef.current.on("message_delivered", ({ messageId }) => {
+    socket.on("message_delivered", ({ messageId }) => {
       onDelivered?.(messageId);
     });
 
-    // ✅ SEEN (backend sends array of IDs)
-    socketRef.current.on("messages_seen", (ids) => {
+    socket.on("messages_seen", (ids) => {
       onSeen?.(ids);
     });
 
     return () => {
-      socketRef.current.off();
-      socketRef.current.disconnect();
+      socket.off();
+      socket.disconnect();
     };
   }, [chatId, token]);
 
   return {
-    /* ---------------- EMITS ---------------- */
+    /* ---------------- SOCKET ACTIONS ---------------- */
 
     sendMessage: (to, text) =>
       socketRef.current?.emit("send_message", { to, text }),
@@ -64,35 +70,47 @@ export default function useChatSocket({
     stopTyping: (to) =>
       socketRef.current?.emit("stop_typing", { to }),
 
-    // ✅ MUST MATCH BACKEND
     markSeen: (fromUserId) =>
-      socketRef.current?.emit("seen_chat", {
-        from: fromUserId,
-      }),
+      socketRef.current?.emit("seen_chat", { from: fromUserId }),
 
-    /* ---------------- REST ---------------- */
+    /* ---------------- DELETE MESSAGE ---------------- */
 
-   deleteMessage: async (msg, mode = "me") => {
-  await fetch(`${API_BASE}/api/messages/${msg._id}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
+    deleteMessage: async (msg, mode = "me") => {
+      /* ✅ Optimistic UI */
+      onDelete?.(msg._id);
+
+      try {
+        await fetch(`${API_BASE}/api/messages/${msg._id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify({ mode }),
+        });
+      } catch (err) {
+        console.error("Delete failed:", err);
+      }
     },
-    body: JSON.stringify({ mode }),
-  });
-},
 
+    /* ---------------- CLEAR CHAT ---------------- */
 
-    clearChat: async (id) => {
-      await fetch(`${API_BASE}/api/messages/clear/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
-        body: JSON.stringify({ mode: "everyone" }),
-      });
+    clearChat: async (id, mode = "me") => {
+      /* ✅ Optimistic UI */
+      onClear?.();
+
+      try {
+        await fetch(`${API_BASE}/api/messages/clear/${id}`, {
+          method: "DELETE",   // ✅ FIXED 🔥
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify({ mode }),
+        });
+      } catch (err) {
+        console.error("Clear chat failed:", err);
+      }
     },
   };
 }

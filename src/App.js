@@ -39,7 +39,9 @@ function Layout({ children }) {
     location.pathname === "/login" ||
     location.pathname === "/register";
 
-  const hideTopBar = location.pathname.startsWith("/chat");
+  const hideTopBar = location.pathname.startsWith("/chat")||
+  location.pathname === "/login" ||
+    location.pathname === "/register";
 
   return (
     <>
