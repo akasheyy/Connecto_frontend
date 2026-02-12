@@ -4,7 +4,7 @@ export const AuthContext = createContext();
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-export function AuthProvider({ children }) {
+export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 

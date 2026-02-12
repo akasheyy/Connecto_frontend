@@ -429,3 +429,64 @@
     justify-content: center;
   }
 }
+
+/* --- SKELETON ANIMATION --- */
+.skeleton {
+  background: #eee;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.skeleton-shimmer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-avatar { width: 140px; height: 140px; border-radius: 50%; }
+.skeleton-info { flex: 1; display: flex; flexDirection: column; gap: 10px; }
+.skeleton-line { width: 200px; height: 20px; }
+.skeleton-line.small { width: 120px; }
+.skeleton-post { aspect-ratio: 1/1; border-radius: 8px; }
+
+/* --- PUBLIC PROFILE SPECIFIC BUTTONS --- */
+.profile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.action-btn:hover { opacity: 0.8; }
+
+.follow-btn { background-color: #0095f6; color: white; }
+.unfollow-btn { background-color: #efefef; color: #262626; }
+.message-btn { background-color: #efefef; color: #262626; }
+
+.bio-joined {
+  font-size: 12px;
+  color: #8e8e8e !important;
+  margin-top: 8px !important;
+}
+
+.error-msg {
+  color: white;
+  text-align: center;
+  margin-top: 50px;
+}

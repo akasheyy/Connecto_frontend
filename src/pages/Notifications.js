@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiHeart, FiMessageCircle, FiUserPlus, FiMessageSquare } from "react-icons/fi";
+import {
+  FiHeart,
+  FiMessageCircle,
+  FiUserPlus,
+  FiMessageSquare,
+} from "react-icons/fi";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -9,6 +14,11 @@ export default function Notifications() {
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+  // ✅ FILTERED LIST (Hide message notifications)
+  const visibleNotifications = notifications.filter(
+    (n) => n.type !== "message"
+  );
+
   useEffect(() => {
     fetchNotifications();
   }, []);
@@ -16,8 +26,9 @@ export default function Notifications() {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
+
       const res = await fetch(`${API_BASE_URL}/api/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
@@ -34,13 +45,14 @@ export default function Notifications() {
   const markAsRead = async (id) => {
     try {
       const token = localStorage.getItem("token");
+
       await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setNotifications(prev =>
-        prev.map(n => n._id === id ? { ...n, read: true } : n)
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, read: true } : n))
       );
     } catch (err) {
       console.log("Error marking as read:", err);
@@ -50,12 +62,13 @@ export default function Notifications() {
   const markAllRead = async () => {
     try {
       const token = localStorage.getItem("token");
+
       await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.log("Error marking all as read:", err);
     }
@@ -64,12 +77,13 @@ export default function Notifications() {
   const deleteNotification = async (id) => {
     try {
       const token = localStorage.getItem("token");
+
       await fetch(`${API_BASE_URL}/api/notifications/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setNotifications(prev => prev.filter(n => n._id !== id));
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
     } catch (err) {
       console.log("Error deleting notification:", err);
     }
@@ -85,8 +99,6 @@ export default function Notifications() {
         return `${name} commented: "${n.text}"`;
       case "follow":
         return `${name} started following you`;
-      case "message":
-        return `${name} sent you a message`;
       default:
         return "New notification";
     }
@@ -100,8 +112,6 @@ export default function Notifications() {
         return <FiMessageCircle size={20} color="#3b82f6" />;
       case "follow":
         return <FiUserPlus size={20} color="#10b981" />;
-      case "message":
-        return <FiMessageSquare size={20} color="#f59e0b" />;
       default:
         return <FiMessageSquare size={20} color="#6b7280" />;
     }
@@ -116,8 +126,6 @@ export default function Notifications() {
       navigate(`/user/${n.fromUserId._id}`);
     } else if ((n.type === "like" || n.type === "comment") && n.postId) {
       navigate(`/post/${n.postId._id || n.postId}`);
-    } else if (n.type === "message" && n.fromUserId) {
-      navigate(`/chat/${n.fromUserId._id}`);
     }
   };
 
@@ -132,9 +140,18 @@ export default function Notifications() {
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+          marginTop:55,
+        }}
+      >
         <h2 style={{ margin: 0 }}>Notifications</h2>
-        {notifications.length > 0 && (
+
+        {visibleNotifications.length > 0 && (
           <button
             onClick={markAllRead}
             style={{
@@ -143,7 +160,7 @@ export default function Notifications() {
               color: "#fff",
               border: "none",
               borderRadius: 6,
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             Mark All Read
@@ -152,12 +169,12 @@ export default function Notifications() {
       </div>
 
       {/* LIST */}
-      {notifications.length === 0 ? (
+      {visibleNotifications.length === 0 ? (
         <div style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
           <p>No notifications yet</p>
         </div>
       ) : (
-        notifications.map((n) => (
+        visibleNotifications.map((n) => (
           <div
             key={n._id}
             onClick={() => handleNotificationClick(n)}
@@ -170,7 +187,7 @@ export default function Notifications() {
               background: n.read ? "#fff" : "#f3f4f6",
               border: "1px solid #e5e7eb",
               cursor: "pointer",
-              transition: "background 0.2s"
+              transition: "background 0.2s",
             }}
           >
             {/* AVATAR */}
@@ -181,14 +198,22 @@ export default function Notifications() {
                 width: 40,
                 height: 40,
                 borderRadius: "50%",
-                flexShrink: 0
+                flexShrink: 0,
               }}
             />
 
             {/* CONTENT */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 4,
+                }}
+              >
                 {getIcon(n.type)}
+
                 <span style={{ fontSize: 14, color: "#374151", flex: 1 }}>
                   {formatText(n)}
                 </span>
@@ -199,7 +224,7 @@ export default function Notifications() {
                   month: "short",
                   day: "numeric",
                   hour: "2-digit",
-                  minute: "2-digit"
+                  minute: "2-digit",
                 })}
               </div>
             </div>
@@ -216,7 +241,7 @@ export default function Notifications() {
                 color: "#6b7280",
                 cursor: "pointer",
                 padding: 4,
-                borderRadius: 4
+                borderRadius: 4,
               }}
             >
               ✕

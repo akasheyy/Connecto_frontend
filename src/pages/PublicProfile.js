@@ -1,20 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import "./Profile.css"; // Ensure this file contains the styles provided below
 
-/* ---------------- SKELETON ---------------- */
-function Skeleton({ width, height, radius = 8 }) {
+/* ================= SKELETON ================= */
+function Skeleton({ className }) {
   return (
-    <div
-      style={{
-        width,
-        height,
-        borderRadius: radius,
-        background:
-          "linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 37%,#e5e7eb 63%)",
-        backgroundSize: "400% 100%",
-        animation: "shimmer 1.4s ease infinite",
-      }}
-    />
+    <div className={`skeleton ${className}`}>
+      <div className="skeleton-shimmer" />
+    </div>
   );
 }
 
@@ -31,59 +24,47 @@ export default function PublicProfile() {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
-        if (!token || !API_BASE_URL) return;
+        if (!token) return;
 
-        const meRes = await fetch(`${API_BASE_URL}/api/user/me`, {
-          headers: { Authorization: "Bearer " + token },
-        });
+        const [meRes, profRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/user/me`, {
+            headers: { Authorization: "Bearer " + token },
+          }),
+          fetch(`${API_BASE_URL}/api/user/profile/${id}`, {
+            headers: { Authorization: "Bearer " + token },
+          })
+        ]);
+
         const meData = await meRes.json();
+        const profData = await profRes.json();
+
         setCurrentUser(meData);
-
-        const res = await fetch(
-          `${API_BASE_URL}/api/user/profile/${id}`,
-          { headers: { Authorization: "Bearer " + token } }
-        );
-        const data = await res.json();
-
         setUserData({
-          user: data.user || null,
-          posts: Array.isArray(data.posts) ? data.posts : [],
+          user: profData.user || null,
+          posts: Array.isArray(profData.posts) ? profData.posts : [],
         });
-
-        setLoading(false);
       } catch (err) {
         console.error("Public profile load error:", err);
+      } finally {
         setLoading(false);
       }
     }
     load();
   }, [id, API_BASE_URL]);
 
-  /* ---------------- LOADING ---------------- */
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          padding: "20px",
-          background: "linear-gradient(135deg,#667eea,#764ba2)",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: "900px", marginTop: "50px" }}>
-          <div style={{ background: "#fff", padding: "30px", borderRadius: "20px" }}>
-            <div style={{ display: "flex", gap: "40px" }}>
-              <Skeleton width={110} height={110} radius={999} />
-              <div style={{ flex: 1 }}>
-                <Skeleton width={220} height={28} />
-                <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-                  <Skeleton width={70} height={40} />
-                  <Skeleton width={90} height={40} />
-                  <Skeleton width={90} height={40} />
-                </div>
-              </div>
+      <div className="profile-page">
+        <div className="profile-container">
+          <div className="profile-header">
+            <Skeleton className="skeleton-avatar" />
+            <div className="skeleton-info">
+              <Skeleton className="skeleton-line" />
+              <Skeleton className="skeleton-line small" />
             </div>
+          </div>
+          <div className="profile-grid">
+            {[...Array(6)].map((_, i) => <Skeleton key={i} className="skeleton-post" />)}
           </div>
         </div>
       </div>
@@ -91,241 +72,111 @@ export default function PublicProfile() {
   }
 
   if (!userData || !userData.user) {
-    return <h2 style={{ textAlign: "center", color: "white" }}>User not found</h2>;
+    return <div className="profile-page"><h2 className="error-msg">User not found</h2></div>;
   }
 
   const { user, posts } = userData;
-  const joinedDate = new Date(user.createdAt);
-
-  const followerList = user.followers || [];
-  const followingList = user.following || [];
-
-  const followingIds =
-    currentUser?.following?.map(f => (typeof f === "string" ? f : f._id)) || [];
-
+  const followingIds = currentUser?.following?.map(f => (typeof f === "string" ? f : f._id)) || [];
   const isFollowing = followingIds.includes(user._id);
 
-  /* ---------------- FOLLOW LOGIC (INSTANT UI) ---------------- */
-  async function handleFollow() {
+  /* ================= FOLLOW LOGIC ================= */
+  async function toggleFollow() {
     const token = localStorage.getItem("token");
-
-    setUserData(prev => ({
-      ...prev,
-      user: { ...prev.user, followers: [...prev.user.followers, currentUser._id] }
-    }));
-
-    setCurrentUser(prev => ({
-      ...prev,
-      following: [...prev.following, user._id]
-    }));
-
-    await fetch(`${API_BASE_URL}/api/user/${user._id}/follow`, {
-      method: "PUT",
-      headers: { Authorization: "Bearer " + token },
-    });
-  }
-
-  async function handleUnfollow() {
-    const token = localStorage.getItem("token");
-
+    const endpoint = isFollowing ? "unfollow" : "follow";
+    
+    // Optimistic UI Update
     setUserData(prev => ({
       ...prev,
       user: {
         ...prev.user,
-        followers: prev.user.followers.filter(
-          f => (typeof f === "string" ? f : f._id) !== currentUser._id
-        ),
-      },
+        followers: isFollowing 
+          ? prev.user.followers.filter(f => (f._id || f) !== currentUser._id)
+          : [...prev.user.followers, currentUser._id]
+      }
     }));
 
     setCurrentUser(prev => ({
       ...prev,
-      following: prev.following.filter(
-        f => (typeof f === "string" ? f : f._id) !== user._id
-      ),
+      following: isFollowing
+        ? prev.following.filter(f => (f._id || f) !== user._id)
+        : [...prev.following, user._id]
     }));
 
-    await fetch(`${API_BASE_URL}/api/user/${user._id}/unfollow`, {
+    await fetch(`${API_BASE_URL}/api/user/${user._id}/${endpoint}`, {
       method: "PUT",
       headers: { Authorization: "Bearer " + token },
     });
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "20px",
-        background: "linear-gradient(135deg,#667eea,#764ba2)",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: "900px", marginTop: "50px" }}>
-        {/* ---------------- PROFILE HEADER ---------------- */}
-        <div
-          style={{
-            background: "#fff",
-            padding: "30px",
-            borderRadius: "20px",
-            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-            marginBottom: "30px",
-          }}
-        >
-          <div style={{ display: "flex", gap: "40px", alignItems: "flex-start" }}>
-            {/* LEFT COLUMN (Avatar + Email + Joined) */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                minWidth: "140px",
-              }}
-            >
+    <div className="profile-page">
+      <div className="profile-container">
+        
+        <header className="profile-header">
+          <div className="profile-avatar-wrap">
+            <div className="profile-avatar-border">
               <img
                 src={user.avatar || "https://via.placeholder.com/150"}
-                alt="avatar"
-                style={{
-                  width: "110px",
-                  height: "110px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: "4px solid #764ba2",
-                  marginBottom: "12px",
-                }}
+                alt="profile"
+                className="profile-avatar"
               />
-
-              <p style={{ fontSize: "14px", fontWeight: "600", color: "#333" }}>
-                {user.email}
-              </p>
-
-              <p style={{ fontSize: "12px", color: "#777" }}>
-                Joined{" "}
-                {joinedDate.getDate().toString().padStart(2, "0")}/
-                {(joinedDate.getMonth() + 1).toString().padStart(2, "0")}/
-                {joinedDate.getFullYear()}
-              </p>
             </div>
+          </div>
 
-            {/* RIGHT COLUMN */}
-            <div style={{ flex: 1 }}>
-              <h2 style={{ fontSize: "32px", fontWeight: "800", marginBottom: "20px" }}>
-                {user.username}
-              </h2>
-
-              {/* STATS */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  maxWidth: "360px",
-                  marginBottom: "25px",
-                }}
-              >
-                <Stat label="Posts" value={posts.length} />
-                <Link to={`/followers/${user._id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <Stat label="Followers" value={followerList.length} />
-                </Link>
-                <Link to={`/following/${user._id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <Stat label="Following" value={followingList.length} />
-                </Link>
-              </div>
-
-              {/* FOLLOW BUTTON (LOGOUT POSITION) */}
+          <section className="profile-info">
+            <div className="profile-top-row">
+              <h2 className="profile-username">{user.username}</h2>
               {currentUser?._id !== user._id && (
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <button
-                    onClick={isFollowing ? handleUnfollow : handleFollow}
-                    style={{
-                      background: isFollowing ? "#ef4444" : "#2563eb",
-                      color: "white",
-                      border: "none",
-                      padding: "8px 20px",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                    }}
+                <div className="profile-actions">
+                  <button 
+                    className={`action-btn ${isFollowing ? "unfollow-btn" : "follow-btn"}`}
+                    onClick={toggleFollow}
                   >
                     {isFollowing ? "Unfollow" : "Follow"}
                   </button>
-
-                  <Link
-                    to={`/chat/${user._id}`}
-                    style={{
-                      background: "#16a34a",
-                      color: "white",
-                      padding: "8px 20px",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      textDecoration: "none",
-                    }}
-                  >
+                  <Link to={`/chat/${user._id}`} className="action-btn message-btn">
                     Message
                   </Link>
                 </div>
               )}
             </div>
-          </div>
+
+            <div className="profile-stats">
+              <div><b>{posts.length}</b> posts</div>
+              <Link to={`/followers/${user._id}`}>
+                <b>{user.followers?.length || 0}</b> followers
+              </Link>
+              <Link to={`/following/${user._id}`}>
+                <b>{user.following?.length || 0}</b> following
+              </Link>
+            </div>
+
+            <div className="profile-bio">
+              <span>{user.username}</span>
+              <p>Digital Creator</p>
+              <p className="bio-joined">Joined {new Date(user.createdAt).toLocaleDateString()}</p>
+            </div>
+          </section>
+        </header>
+
+        <div className="profile-tabs">
+          <div className="profile-tab">POSTS</div>
         </div>
 
-        {/* ---------------- POSTS GRID ---------------- */}
-        <h3 style={{ color: "white", marginBottom: "15px", fontSize: "22px" }}>
-          Posts
-        </h3>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-            gap: "10px",
-          }}
-        >
-          {posts.map((p) => (
-            <Link
-              key={p._id}
-              to={`/post/${p._id}`}
-              style={{
-                display: "block",
-                borderRadius: "14px",
-                overflow: "hidden",
-                background: "#fff",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              }}
-            >
-              {p.image ? (
-                <img
-                  src={p.image}
-                  alt=""
-                  style={{ width: "100%", height: "160px", objectFit: "cover" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    height: "160px",
-                    background: "#f3f4f6",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "#555",
-                  }}
-                >
-                  No Image
+        <div className="profile-grid">
+          {posts.map((post) => (
+            <div key={post._id} className="profile-post">
+              <Link to={`/post/${post._id}`}>
+                <img src={post.image} alt="post" />
+                <div className="profile-post-overlay">
+                  <span>❤️</span>
                 </div>
-              )}
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
 
-/* ---------------- STAT ---------------- */
-function Stat({ label, value }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <h3 style={{ margin: 0 }}>{value}</h3>
-      <p style={{ margin: 0, fontSize: "13px", color: "#777" }}>{label}</p>
+      </div>
     </div>
   );
 }

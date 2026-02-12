@@ -34,27 +34,24 @@ export default function Chat() {
 
   /* ---------------- VIEWPORT FIX ---------------- */
 
-  useLayoutEffect(() => {
-    const handleViewportChange = () => {
-      if (window.visualViewport && containerRef.current) {
-        containerRef.current.style.height = `${window.visualViewport.height}px`;
+ useEffect(() => {
+  const viewport = window.visualViewport;
 
-        if (autoScroll) {
-          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-    };
+  if (!viewport) return;
 
-    window.visualViewport?.addEventListener("resize", handleViewportChange);
-    window.visualViewport?.addEventListener("scroll", handleViewportChange);
+  const handleKeyboard = () => {
+    const keyboardHeight = window.innerHeight - viewport.height;
 
-    handleViewportChange();
+    document.documentElement.style.setProperty(
+      "--keyboard-height",
+      `${keyboardHeight}px`
+    );
+  };
 
-    return () => {
-      window.visualViewport?.removeEventListener("resize", handleViewportChange);
-      window.visualViewport?.removeEventListener("scroll", handleViewportChange);
-    };
-  }, [autoScroll]);
+  viewport.addEventListener("resize", handleKeyboard);
+
+  return () => viewport.removeEventListener("resize", handleKeyboard);
+}, []);
 
   /* ---------------- SOCKET ---------------- */
 
@@ -279,6 +276,16 @@ export default function Chat() {
           .cancel-btn {
             background: #e5e7eb;
           }
+            .chat-input-section {
+  position: sticky;
+  bottom: 0;
+  background: white;
+
+  padding-bottom: env(safe-area-inset-bottom);
+  transform: translateY(calc(-1 * var(--keyboard-height, 0px)));
+  transition: transform 0.25s ease;
+}
+
         `}
       </style>
 
