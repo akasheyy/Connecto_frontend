@@ -96,9 +96,7 @@ export default function Chat() {
     async (msg, mode) => {
       await socket.deleteMessage(msg, mode);
 
-      if (mode === "me") {
-        setMessages((prev) => prev.filter((m) => m._id !== msg._id));
-      }
+      setMessages((prev) => prev.filter((m) => m._id !== msg._id));
     },
     [socket]
   );

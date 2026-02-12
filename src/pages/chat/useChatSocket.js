@@ -76,11 +76,8 @@ export default function useChatSocket({
     /* ---------------- DELETE MESSAGE ---------------- */
 
     deleteMessage: async (msg, mode = "me") => {
-      /* ✅ Optimistic UI */
-      onDelete?.(msg._id);
-
       try {
-        await fetch(`${API_BASE}/api/messages/${msg._id}`, {
+        const res = await fetch(`${API_BASE}/api/messages/${msg._id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -88,6 +85,14 @@ export default function useChatSocket({
           },
           body: JSON.stringify({ mode }),
         });
+
+        if (!res.ok) {
+          console.log("❌ Delete rejected");
+          return;
+        }
+
+        console.log("✅ Delete success:", mode);
+
       } catch (err) {
         console.error("Delete failed:", err);
       }
@@ -96,12 +101,13 @@ export default function useChatSocket({
     /* ---------------- CLEAR CHAT ---------------- */
 
     clearChat: async (id, mode = "me") => {
-      /* ✅ Optimistic UI */
+
+      /* ✅ Optimistic UI (safe for clear chat) */
       onClear?.();
 
       try {
         await fetch(`${API_BASE}/api/messages/clear/${id}`, {
-          method: "DELETE",   // ✅ FIXED 🔥
+          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: "Bearer " + token,
