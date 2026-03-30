@@ -174,7 +174,6 @@ export default function ChatInput({ socket, chatId }) {
       )}
 
       <div className="input-row">
-        <button onClick={() => setShowEmoji((s) => !s)}>😊</button>
 
         <button onClick={() => fileRef.current.click()}>📎</button>
 
