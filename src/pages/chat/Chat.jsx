@@ -228,7 +228,7 @@ export default function Chat() {
           }
 
           .messages-inner-wrapper {
-            padding: 10px;
+            padding: 1px;
           }
 
           /* ✅ CLEAR CHAT MODAL */
@@ -280,7 +280,6 @@ export default function Chat() {
   background: white;
 
   padding-bottom: env(safe-area-inset-bottom);
-  transform: translateY(calc(-1 * var(--keyboard-height, 0px)));
   transition: transform 0.25s ease;
 }
 
